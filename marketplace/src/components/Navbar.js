@@ -31,7 +31,7 @@ function Navbar() {
             <img src={carticon} alt="Panier" style={{ width: '24px' }} />
           </Link>
 
-          <Link to="/Auth" className="text-dark mx-3" aria-label="Compte Utilisateur"> {/* Add route for User Account */}
+          <Link to="/profile" className="text-dark mx-3" aria-label="Compte Utilisateur"> {/* Add route for User Account */}
             <img src={usericon} alt="Compte Utilisateur" style={{ width: '24px' }} />
           </Link>
         </div>

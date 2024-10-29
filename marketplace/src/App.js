@@ -6,6 +6,7 @@ import Shop from './components/Shop/Shop';
 import Cart from './components/Cart/Cart';
 import LoginSignup from './components/Authentification/LoginSignup';
 import OurStory from './components/OurStory/OurStory';
+import UserDashboard from './components/Client/UserDashbord';
 import './App.css';
 
 const products = [
@@ -26,6 +27,7 @@ function App() {
         <Route path="/cart" element={<Cart />} /><Route/>
         <Route path="/Auth" element={<LoginSignup />} /><Route/>
         <Route path="/About" element={<OurStory />} /><Route/>
+        <Route path="/Profile" element={<UserDashboard />} /><Route/>
         {/* Add other routes here as needed */}
       </Routes>
     </BrowserRouter>
