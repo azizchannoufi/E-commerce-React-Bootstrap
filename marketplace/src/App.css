@@ -1,0 +1,18 @@
+.featured-product {
+  background-size: cover;
+  background-position: center;
+  color: white;
+}
+
+.card:hover {
+  transform: scale(1.02);
+  transition: all 0.3s ease;
+}
+
+.btn-outline-dark {
+  border-color: #333;
+  color: #333;
+}
+.card:hover .overlay {
+  opacity: 1;
+}
