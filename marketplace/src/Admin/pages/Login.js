@@ -13,7 +13,7 @@ const Login = () => {
     e.preventDefault();
 
     // Vérification basique du login (vous pouvez remplacer par une API ou une logique plus avancée)
-    if (username === 'admin' && password === 'admin123') {
+    if (username === 'admin' && password === 'admin') {
       navigate('dashboard'); // Redirige vers le tableau de bord
     } else {
       setError('Nom d\'utilisateur ou mot de passe incorrect');

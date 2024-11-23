@@ -1,18 +1,46 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import Navbar from '../Navbar';
 import Footer from '../Footer';
-
+import axios from 'axios'
 function OneProduct() {
   const location = useLocation();
   const { product } = location.state || {}; // Get the product from state
 
   const [quantity, setQuantity] = useState(1); // Initialize quantity state
+  const [userId,setUserId]=useState(localStorage.getItem('uid'))
+  const [oneUser, setOneUser] = useState(null); // Initialisez à null pour éviter les erreurs
 
+  const getOneUser = async () => {
+    try {
+      const response = await axios.get(`http://localhost:3001/api/users/${userId}`);
+      if (response.status === 200) {
+        setOneUser(response.data); // Mettre à jour l'état avec les données de l'utilisateur
+  console.log(response.data);
+  
+      } else {
+        console.log("Erreur lors de la récupération des informations de l'utilisateur");
+      }
+    } catch (e) {
+      console.error('Erreur dans la récupération de l\'utilisateur:', e);
+      alert('Erreur dans la récupération de l\'utilisateur');
+    }
+  };
+  useEffect(()=>{
+    getOneUser()
+  },[])
+  const sendEmail=async()=>{
+    try{
+      const response=await axios.post("http://localhost:3001/api/email",{
+        recipientEmail:oneUser.email,
+        subject:"Nouvelle Commande Acheter !!",
+        message:""
+      })
+    }catch(e){}
+  }
   if (!product) {
     return <p>Product not found</p>;
   }
-
   // Handlers for incrementing and decrementing quantity
   const handleIncrease = () => {
     setQuantity((prevQuantity) => prevQuantity + 1);

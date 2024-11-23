@@ -1,31 +1,66 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios'; // Assurez-vous que axios est importé
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import Navbar from '../Navbar';
 import Footer from '../Footer';
-import { Modal } from 'react-bootstrap'; // Assurez-vous d'avoir Bootstrap installé
+import { Modal } from 'react-bootstrap';
 
 // Initialize Stripe
 const stripePromise = loadStripe('your-publishable-key'); // Remplacez avec votre clé publique Stripe
 
 function Cart() {
-  const [cartItems, setCartItems] = useState([]); // État pour les articles du panier
-  const [totalAmount, setTotalAmount] = useState(0); // État pour le montant total
-  const [checkoutType, setCheckoutType] = useState(null); // État pour le type de commande
-  const [showModal, setShowModal] = useState(false); // État pour afficher le modal
+  const [cartItems, setCartItems] = useState([]);
+  const [totalAmount, setTotalAmount] = useState(0);
+  const [checkoutType, setCheckoutType] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [userId, setUserId] = useState(localStorage.getItem('uid'));
+  const [oneUser, setOneUser] = useState(null);
+
+  const getOneUser = async () => {
+    try {
+      const response = await axios.get(`http://localhost:3001/api/users/${userId}`);
+      if (response.status === 200) {
+        setOneUser(response.data);
+      } else {
+        console.error("Erreur lors de la récupération des informations de l'utilisateur");
+      }
+    } catch (e) {
+      console.error('Erreur dans la récupération de l\'utilisateur:', e);
+    }
+  };
 
   useEffect(() => {
-    // Charger les articles du panier depuis localStorage
+    getOneUser();
+  }, []);
+
+  const sendEmail = async () => {
+    if (!oneUser) {
+      console.error("Utilisateur introuvable pour l'envoi de l'email.");
+      return;
+    }
+
+    try {
+      const response = await axios.post("http://localhost:3001/api/email", {
+        recipientEmail: oneUser.email,
+        subject: "Nouvelle Commande Acheter !!",
+        message: `Votre commande est passée avec succès !\nTotal : ${totalAmount}\nType de paiement : ${checkoutType}`,
+      });
+      console.log('Email envoyé avec succès:', response.data);
+    } catch (e) {
+      console.error('Erreur lors de l\'envoi de l\'email:', e);
+    }
+  };
+
+  useEffect(() => {
     const savedCart = JSON.parse(localStorage.getItem('cart')) || [];
     setCartItems(savedCart);
-
-    // Calculer le montant total
     const total = savedCart.reduce((sum, item) => sum + item.prix * item.quantity, 0);
     setTotalAmount(total);
   }, []);
 
-  const handleCloseModal = () => setShowModal(false); // Fermer le modal
-  const handleShowModal = () => setShowModal(true); // Afficher le modal
+  const handleCloseModal = () => setShowModal(false);
+  const handleShowModal = () => setShowModal(true);
 
   return (
     <>
@@ -47,7 +82,7 @@ function Cart() {
                   <div>
                     <h5>{item.name}</h5>
                     <p>
-                      ${parseFloat(item.prix).toFixed(2)} x {item.quantity} = $ 
+                      ${parseFloat(item.prix).toFixed(2)} x {item.quantity} = $
                       {parseFloat(item.prix * item.quantity).toFixed(2)}
                     </p>
                   </div>
@@ -78,14 +113,20 @@ function Cart() {
               <Elements stripe={stripePromise}>
                 <CheckoutForm
                   totalAmount={totalAmount}
-                  onSuccess={handleShowModal} // Passez la fonction pour afficher le modal
+                  onSuccess={() => {
+                    handleShowModal();
+                    sendEmail();
+                  }}
                 />
               </Elements>
             )}
             {checkoutType === 'delivery' && (
               <DeliveryForm
                 totalAmount={totalAmount}
-                onSuccess={handleShowModal} // Passez la fonction pour afficher le modal
+                onSuccess={() => {
+                  handleShowModal();
+                  sendEmail();
+                }}
               />
             )}
           </div>
@@ -93,12 +134,11 @@ function Cart() {
       </div>
       <Footer />
 
-      {/* Modal de confirmation */}
       <Modal show={showModal} onHide={handleCloseModal}>
         <Modal.Header closeButton>
           <Modal.Title>Commande réussie</Modal.Title>
         </Modal.Header>
-        <Modal.Body>Merci pour votre confiance ! Votre commande a été passée avec succès, verifier ton email .</Modal.Body>
+        <Modal.Body>Merci pour votre confiance ! Votre commande a été passée avec succès, vérifier votre email.</Modal.Body>
         <Modal.Footer>
           <button className="btn btn-primary" onClick={handleCloseModal}>
             Fermer
@@ -112,102 +152,52 @@ function Cart() {
 function CheckoutForm({ totalAmount, onSuccess }) {
   const stripe = useStripe();
   const elements = useElements();
-  const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
-
-  const clientSecret = 'simulated_client_secret_for_testing'; // Client secret simulé
 
   const handleSubmit = async (event) => {
     event.preventDefault();
     setLoading(true);
-    setError(null);
-    setSuccess(true);
-    localStorage.removeItem('cart'); // Vider le panier après le paiement réussi
-    onSuccess(); // Afficher le modal de succès
-    setLoading(true);
-  }
+
+    // Simuler une validation réussie
+    localStorage.removeItem('cart');
+    onSuccess();
+    setLoading(false);
+  };
 
   return (
     <form onSubmit={handleSubmit}>
       <h5>Enter Payment Information</h5>
       <CardElement className="form-control mb-3" />
-      {error && <div className="alert alert-danger">{error}</div>}
-      {success ? (
-        <div className="alert alert-success">Payment Successful!</div>
-      ) : (
-        <button type="submit" className="btn btn-primary" disabled={!stripe || loading}>
-          {loading ? 'Processing...' : `Pay $${totalAmount.toFixed(2)}`}
-        </button>
-      )}
+      <button type="submit" className="btn btn-primary" disabled={!stripe || loading}>
+        {loading ? 'Processing...' : `Pay $${totalAmount.toFixed(2)}`}
+      </button>
     </form>
   );
 }
 
-function DeliveryForm({ totalAmount }) {
+function DeliveryForm({ totalAmount, onSuccess }) {
   const [address, setAddress] = useState('');
   const [city, setCity] = useState('');
   const [postalCode, setPostalCode] = useState('');
-  const [submitted, setSubmitted] = useState(false);
 
   const handleSubmit = (event) => {
     event.preventDefault();
-    setSubmitted(true);
 
-    // Vous pouvez intégrer Stripe ou enregistrer l'adresse ici
-
-    // Vider le panier dans localStorage
+    // Simuler une soumission réussie
     localStorage.removeItem('cart');
-
-    // Rafraîchir la page après avoir vidé le panier
-    window.location.reload(); // Force le rechargement de la page
-
-    alert('Delivery details submitted successfully!');
+    onSuccess();
   };
 
   return (
     <form onSubmit={handleSubmit}>
       <h5>Enter Delivery Information</h5>
-      <div className="mb-3">
-        <label className="form-label">Address</label>
-        <input
-          type="text"
-          className="form-control"
-          value={address}
-          onChange={(e) => setAddress(e.target.value)}
-          required
-        />
-      </div>
-      <div className="mb-3">
-        <label className="form-label">City</label>
-        <input
-          type="text"
-          className="form-control"
-          value={city}
-          onChange={(e) => setCity(e.target.value)}
-          required
-        />
-      </div>
-      <div className="mb-3">
-        <label className="form-label">Postal Code</label>
-        <input
-          type="text"
-          className="form-control"
-          value={postalCode}
-          onChange={(e) => setPostalCode(e.target.value)}
-          required
-        />
-      </div>
-      {submitted && (
-        <div className="alert alert-success">
-          Your delivery details have been submitted!
-        </div>
-      )}
-      <button type="submit" className="btn btn-primary">
-        Submit Delivery Details
-      </button>
+      <input type="text" className="form-control mb-3" placeholder="Address" value={address} onChange={(e) => setAddress(e.target.value)} required />
+      <input type="text" className="form-control mb-3" placeholder="City" value={city} onChange={(e) => setCity(e.target.value)} required />
+      <input type="text" className="form-control mb-3" placeholder="Postal Code" value={postalCode} onChange={(e) => setPostalCode(e.target.value)} required />
+      <button type="submit" className="btn btn-primary">Submit Delivery Details</button>
       <h5 className="mt-3">Total: ${totalAmount.toFixed(2)}</h5>
     </form>
   );
 }
+
 export default Cart;

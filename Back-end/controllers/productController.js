@@ -1,6 +1,7 @@
 const admin = require('../config/firebase');
 const db = admin.firestore();
 const productsRef = db.collection('produits');
+const nodemailer = require('nodemailer');
 const cloudinary = require('cloudinary').v2;
 require('dotenv').config(); // Charger les variables d'environnement
 // Ajouter un produit (Create a product)
@@ -136,6 +137,5 @@ exports.uploadImage = async (req, res) => {
         return res.status(500).json({ error: 'Échec de l\'upload de l\'image.' });
     }
 };
-
 
 

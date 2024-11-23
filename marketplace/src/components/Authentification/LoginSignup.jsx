@@ -24,25 +24,24 @@ function LoginSignup({ onLogin }) {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const auth = getAuth(app); // Firebase Auth instance
+      const auth = getAuth(app);
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
-      const token = await user.getIdToken(); // Firebase JWT token
-      console.log('Login successful! User:', user);
-
-      // Send token to backend
-      await axios.post('http://localhost:3001/api/login', { token });
-
-      // Call onLogin to pass user info to parent (UserDashboard)
-      onLogin({ uid: user.uid});
-
+      const token = await user.getIdToken();
+  
+      // Enregistrer le uid et le token dans le localStorage
+      localStorage.setItem('token', token);
+      localStorage.setItem('uid', user.uid);
+  
+      // Appeler la fonction de parent pour mettre à jour l'état
+      onLogin({ uid: user.uid });
+  
       alert('Login successful!');
     } catch (error) {
       console.error('Login error:', error.message);
       alert('Invalid email or password');
     }
   };
-
   // Signup handler
   const handleSignup = async (e) => {
     e.preventDefault();

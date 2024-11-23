@@ -22,6 +22,15 @@ function UserDashboard() {
     setUserId(userInfo); // Met à jour l'utilisateur après connexion
   };
 // console.log(userId.email);
+useEffect(() => {
+  const savedUid = localStorage.getItem('uid');
+  const savedToken = localStorage.getItem('token');
+
+  if (savedUid && savedToken) {
+    setUserId({ uid: savedUid });
+  }
+}, []);
+
 
   useEffect(() => {
     // Si l'utilisateur est connecté, récupérer ses informations
