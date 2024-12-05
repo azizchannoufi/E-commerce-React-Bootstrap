@@ -52,16 +52,14 @@ function OneProduct() {
 
   // Handler for adding to cart
   const handleAddToCart = () => {
-    const cart = JSON.parse(localStorage.getItem('cart')) || []; // Retrieve existing cart or initialize
+    const cart = JSON.parse(localStorage.getItem('cart')) || [];
     const existingProductIndex = cart.findIndex(
       (item) => item.id === product.id
     );
-
+  
     if (existingProductIndex !== -1) {
-      // Update quantity if product already in cart
       cart[existingProductIndex].quantity += quantity;
     } else {
-      // Add new product to cart
       cart.push({
         id: product.id,
         name: product.name,
@@ -70,10 +68,15 @@ function OneProduct() {
         quantity,
       });
     }
-
-    localStorage.setItem('cart', JSON.stringify(cart)); // Save updated cart to localStorage
+  
+    localStorage.setItem('cart', JSON.stringify(cart));
+    
+    // Déclenche un événement de changement pour mettre à jour la Navbar
+    window.dispatchEvent(new Event('storage'));
+  
     alert('Product added to cart successfully!');
   };
+  
 
   return (
     <div>
